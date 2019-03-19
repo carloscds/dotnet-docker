@@ -13,6 +13,7 @@ jobs:
       or(
         and(
           succeeded(),
+          eq(variables['isPullRequestBuild'], 'false'),
           eq(variables['singlePhase'], '')),
         eq(variables['singlePhase'], 'test')))"
   dependsOn:
@@ -21,18 +22,8 @@ jobs:
   pool: ${{ parameters.pool }}
   strategy:
     matrix: $[ ${{ parameters.matrix }} ]
-  variables:
-    testRunner.container: testrunner-$(Build.BuildId)-$(System.JobId)
-    ${{ if eq(parameters.useRemoteDockerServer, 'false') }}:
-      optionalTestArgs: ''
-    ${{ if eq(parameters.useRemoteDockerServer, 'true') }}:
-      optionalTestArgs: -DisableHttpVerification
-    ${{ if eq(variables['isPullRequestBuild'], 'false') }}:
-      extraRunTestsParameters: -Registry $(acr.server) -RepoPrefix $(stagingRepoPrefix)
-    ${{ if eq(variables['isPullRequestBuild'], 'true') }}:
-      extraRunTestsParameters: -IsLocalRun
   steps:
-  - template: ../steps/init-docker-linux.yml
+  - template: ../steps/test-images-linux-client.yml
     parameters:
       setupRemoteDockerServer: ${{ parameters.useRemoteDockerServer }}
       setupImageBuilder: false
