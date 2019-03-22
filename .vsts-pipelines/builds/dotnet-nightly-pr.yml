@@ -6,4 +6,6 @@ variables:
 - name: manifest
   value: manifest.json
 jobs:
-- template: ../jobs/build-test-publish-repo.yml
+- template: ../jobs/build-test-publish-repo.
+  parameters:
+    isPullRequestBuild: true

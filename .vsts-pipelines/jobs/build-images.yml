@@ -3,7 +3,8 @@ parameters:
   pool: {}
   matrix: {}
   dockerClientOS: null
-  useRemoteDockerServer: false
+  useRemoteDockerServer: false,
+  isPullRequestBuild: false
 jobs:
 - job: ${{ parameters.name }}
   condition: "
@@ -19,13 +20,13 @@ jobs:
     matrix: $[ ${{ parameters.matrix }} ]
   variables:
     osVersion: ${{ parameters.osVersion }}
-    ${{ if eq(variables['isPullRequestBuild'], 'false') }}:
+    ${{ if eq(parameters.isPullRequestBuild, 'false') }}:
       registryPushParameters: --registry-override $(acr.server)
         --repo-prefix $(stagingRepoPrefix)
         --push
         --username $(acr.userName)
         --password $(BotAccount-dotnet-docker-acr-bot-password)
-    ${{ if eq(variables['isPullRequestBuild'], 'true') }}:
+    ${{ if eq(parameters.isPullRequestBuild, 'true') }}:
       registryPushParameters: ""
   steps:
   - template: ${{ format('../steps/init-docker-{0}.yml', parameters.dockerClientOS) }}
@@ -42,10 +43,11 @@ jobs:
       $(registryPushParameters)
       $(imageBuilder.queueArgs)
     displayName: Build Images
-  - ${{ if eq(variables['isPullRequestBuild'], 'true') }}:
+  - ${{ if eq(parameters.isPullRequestBuild, 'true') }}:
     - template: ${{ format('../steps/test-images-{0}-client.yml', parameters.dockerClientOS) }}
       parameters:
         cleanupDocker: false
+        isPullRequestBuild: true
   - template: ${{ format('../steps/cleanup-docker-{0}.yml', parameters.dockerClientOS) }}
     parameters:
       cleanupRemoteDockerServer: ${{ parameters.useRemoteDockerServer }}

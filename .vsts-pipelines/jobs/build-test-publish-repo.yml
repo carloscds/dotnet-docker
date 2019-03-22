@@ -1,3 +1,6 @@
+parameters:
+  isPullRequestBuild: false
+
 jobs:
   ################################################################################
   # Initialization - Generate the VSTS build matrix
@@ -25,6 +28,7 @@ jobs:
       name: Hosted Ubuntu 1604
     matrix: dependencies.GenerateMatrices.outputs['buildMatrix.buildMatrixLinuxAmd64']
     dockerClientOS: linux
+    isPullRequestBuild: ${{ parameters.isPullRequestBuild }}
 - template: build-images.yml
   parameters:
     name: Build_Linux_arm64v8
@@ -37,6 +41,7 @@ jobs:
     matrix: dependencies.GenerateMatrices.outputs['buildMatrix.buildMatrixLinuxArm64v8']
     useRemoteDockerServer: true
     dockerClientOS: linux
+    isPullRequestBuild: ${{ parameters.isPullRequestBuild }}
 - template: build-images.yml
   parameters:
     name: Build_Linux_arm32v7
@@ -49,6 +54,7 @@ jobs:
     matrix: dependencies.GenerateMatrices.outputs['buildMatrix.buildMatrixLinuxArm32v7']
     dockerClientOS: linux
     useRemoteDockerServer: true
+    isPullRequestBuild: ${{ parameters.isPullRequestBuild }}
 - template: build-images.yml
   parameters:
     name: Build_NanoServer1709_amd64
@@ -57,6 +63,7 @@ jobs:
       demands: VSTS_OS -equals Windows_Server_2016_Data_Center_RS3
     matrix: dependencies.GenerateMatrices.outputs['buildMatrix.buildMatrixNanoserver1709Amd64']
     dockerClientOS: windows
+    isPullRequestBuild: ${{ parameters.isPullRequestBuild }}
 - template: build-images.yml
   parameters:
     name: Build_NanoServer1803_amd64
@@ -65,6 +72,7 @@ jobs:
       demands: VSTS_OS -equals Windows_Server_2016_Data_Center_RS4
     matrix: dependencies.GenerateMatrices.outputs['buildMatrix.buildMatrixNanoserver1803Amd64']
     dockerClientOS: windows
+    isPullRequestBuild: ${{ parameters.isPullRequestBuild }}
 - template: build-images.yml
   parameters:
     name: Build_NanoServer1809_amd64
@@ -73,6 +81,7 @@ jobs:
       demands: VSTS_OS -equals Windows_Server_2019_Data_Center_RS5
     matrix: dependencies.GenerateMatrices.outputs['buildMatrix.buildMatrixNanoserver1809Amd64']
     dockerClientOS: windows
+    isPullRequestBuild: ${{ parameters.isPullRequestBuild }}
 - template: build-images.yml
   parameters:
     name: Build_NanoServer1809_arm32
@@ -85,88 +94,90 @@ jobs:
     matrix: dependencies.GenerateMatrices.outputs['buildMatrix.buildMatrixNanoserver1809Arm32']
     dockerClientOS: linux
     useRemoteDockerServer: true
+    isPullRequestBuild: ${{ parameters.isPullRequestBuild }}
 
-  ################################################################################
-  # Test Images
-  ################################################################################
-- template: test-images-linux-client.yml
-  parameters:
-    name: Test_Linux_amd64
-    buildDependencies: Build_Linux_amd64
-    pool: # linuxAmd64Pool
-      name: Hosted Ubuntu 1604
-    matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixLinuxAmd64']
-- template: test-images-linux-client.yml
-  parameters:
-    name: Test_Linux_arm64v8
-    buildDependencies: Build_Linux_arm64v8
-    pool: # linuxArm64v8Pool
-      name: DotNetCore-Docker
-      demands:
-      - agent.os -equals linux
-      - RemoteDockerServerOS -equals linux
-      - RemoteDockerServerArch -equals aarch64
-    matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixLinuxArm64v8']
-    useRemoteDockerServer: true
-- template: test-images-linux-client.yml
-  parameters:
-    name: Test_Linux_arm32v7
-    buildDependencies: Build_Linux_arm32v7
-    pool: # linuxArm32v7Pool
-      name: DotNetCore-Docker
-      demands:
-      - agent.os -equals linux
-      - RemoteDockerServerOS -equals linux
-      - RemoteDockerServerArch -equals aarch64
-    matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixLinuxArm32v7']
-    useRemoteDockerServer: true
-- template: test-images-windows-client.yml
-  parameters:
-    name: Test_NanoServer1709_amd64
-    buildDependencies: Build_NanoServer1709_amd64
-    pool: # windows1709Amd64Pool
-      name: DotNetCore-Docker
-      demands: VSTS_OS -equals Windows_Server_2016_Data_Center_RS3
-    matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixNanoserver1709Amd64']
-- template: test-images-windows-client.yml
-  parameters:
-    name: Test_NanoServer1803_amd64
-    buildDependencies: Build_NanoServer1803_amd64
-    pool: # windows1803Amd64Pool
-      name: DotNetCore-Docker
-      demands: VSTS_OS -equals Windows_Server_2016_Data_Center_RS4
-    matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixNanoserver1803Amd64']
-- template: test-images-windows-client.yml
-  parameters:
-    name: Test_NanoServer1809_amd64
-    buildDependencies: Build_NanoServer1809_amd64
-    pool: # windows1809Amd64
-      name: DotNetCore-Docker
-      demands: VSTS_OS -equals Windows_Server_2019_Data_Center_RS5
-    matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixNanoserver1809Amd64']
-- template: test-images-linux-client.yml
-  parameters:
-    name: Test_NanoServer1809_arm32
-    buildDependencies: Build_NanoServer1809_arm32
-    pool: # nanoServer1809Arm32Pool
-      name: DotNetCore-Docker
-      demands:
-      - agent.os -equals linux
-      - RemoteDockerServerOS -equals nanoserver-1809
-      - RemoteDockerServerArch -equals arm32
-    matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixNanoserver1809Arm32']
-    useRemoteDockerServer: true
+- ${{ if eq(parameters.isPullRequestBuild, 'false') }}:
+    ################################################################################
+    # Test Images
+    ################################################################################
+  - template: test-images-linux-client.yml
+    parameters:
+      name: Test_Linux_amd64
+      buildDependencies: Build_Linux_amd64
+      pool: # linuxAmd64Pool
+        name: Hosted Ubuntu 1604
+      matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixLinuxAmd64']
+  - template: test-images-linux-client.yml
+    parameters:
+      name: Test_Linux_arm64v8
+      buildDependencies: Build_Linux_arm64v8
+      pool: # linuxArm64v8Pool
+        name: DotNetCore-Docker
+        demands:
+        - agent.os -equals linux
+        - RemoteDockerServerOS -equals linux
+        - RemoteDockerServerArch -equals aarch64
+      matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixLinuxArm64v8']
+      useRemoteDockerServer: true
+  - template: test-images-linux-client.yml
+    parameters:
+      name: Test_Linux_arm32v7
+      buildDependencies: Build_Linux_arm32v7
+      pool: # linuxArm32v7Pool
+        name: DotNetCore-Docker
+        demands:
+        - agent.os -equals linux
+        - RemoteDockerServerOS -equals linux
+        - RemoteDockerServerArch -equals aarch64
+      matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixLinuxArm32v7']
+      useRemoteDockerServer: true
+  - template: test-images-windows-client.yml
+    parameters:
+      name: Test_NanoServer1709_amd64
+      buildDependencies: Build_NanoServer1709_amd64
+      pool: # windows1709Amd64Pool
+        name: DotNetCore-Docker
+        demands: VSTS_OS -equals Windows_Server_2016_Data_Center_RS3
+      matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixNanoserver1709Amd64']
+  - template: test-images-windows-client.yml
+    parameters:
+      name: Test_NanoServer1803_amd64
+      buildDependencies: Build_NanoServer1803_amd64
+      pool: # windows1803Amd64Pool
+        name: DotNetCore-Docker
+        demands: VSTS_OS -equals Windows_Server_2016_Data_Center_RS4
+      matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixNanoserver1803Amd64']
+  - template: test-images-windows-client.yml
+    parameters:
+      name: Test_NanoServer1809_amd64
+      buildDependencies: Build_NanoServer1809_amd64
+      pool: # windows1809Amd64
+        name: DotNetCore-Docker
+        demands: VSTS_OS -equals Windows_Server_2019_Data_Center_RS5
+      matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixNanoserver1809Amd64']
+  - template: test-images-linux-client.yml
+    parameters:
+      name: Test_NanoServer1809_arm32
+      buildDependencies: Build_NanoServer1809_arm32
+      pool: # nanoServer1809Arm32Pool
+        name: DotNetCore-Docker
+        demands:
+        - agent.os -equals linux
+        - RemoteDockerServerOS -equals nanoserver-1809
+        - RemoteDockerServerArch -equals arm32
+      matrix: dependencies.GenerateMatrices.outputs['testMatrix.testMatrixNanoserver1809Arm32']
+      useRemoteDockerServer: true
 
   ################################################################################
   # Publish Images
   ################################################################################
-- template: copy-images.yml
-  parameters:
-    pool: # linuxAmd64Pool
-      name: Hosted Ubuntu 1604
-    matrix: dependencies.GenerateMatrices.outputs['publishMatrix.publishMatrix']
+  - template: copy-images.yml
+    parameters:
+      pool: # linuxAmd64Pool
+        name: Hosted Ubuntu 1604
+      matrix: dependencies.GenerateMatrices.outputs['publishMatrix.publishMatrix']
 
-- template: publish-finalize.yml
-  parameters:
-    pool: # linuxAmd64Pool
-      name: Hosted Ubuntu 1604
+  - template: publish-finalize.yml
+    parameters:
+      pool: # linuxAmd64Pool
+        name: Hosted Ubuntu 1604

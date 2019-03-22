@@ -13,7 +13,6 @@ jobs:
       or(
         and(
           succeeded(),
-          eq(variables['isPullRequestBuild'], 'false'),
           eq(variables['singlePhase'], '')),
         eq(variables['singlePhase'], 'test')))"
   dependsOn:

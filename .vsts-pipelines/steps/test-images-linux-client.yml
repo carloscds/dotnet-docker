@@ -1,17 +1,24 @@
 parameters:
   useRemoteDockerServer: false
   cleanupDocker: true
-variables:
-  testRunner.container: testrunner-$(Build.BuildId)-$(System.JobId)
-  ${{ if eq(parameters.useRemoteDockerServer, 'false') }}:
-    optionalTestArgs: ''
-  ${{ if eq(parameters.useRemoteDockerServer, 'true') }}:
-    optionalTestArgs: -DisableHttpVerification
-  ${{ if eq(variables['isPullRequestBuild'], 'false') }}:
-    extraRunTestsParameters: -Registry $(acr.server) -RepoPrefix $(stagingRepoPrefix)
-  ${{ if eq(variables['isPullRequestBuild'], 'true') }}:
-    extraRunTestsParameters: -IsLocalRun
+  isPullRequestBuild: false
+  testrunner.container: testrunner-$(Build.BuildId)-$(System.JobId)
 steps:
+- script: >
+    optionalTestArgs=""
+    if [ "${{ parameters.useRemoteDockerServer }}" == "true"  ]
+    then
+      optionalTestArgs="-DisableHttpVerification"
+    fi
+    if [ "${{ parameters.isPullRequestBuild }}" == "false"  ]
+    then
+      optionalTestArgs="$optionalTestArgs -Registry $(acr.server) -RepoPrefix $(stagingRepoPrefix)"
+    else
+      optionalTestArgs="$optionalTestArgs -IsLocalRun"
+    fi
+    echo "##vso[task.setvariable variable=optionalTestArgs]
+    $optionalTestArgs"
+  displayName: Set Optional Test Script Args
 - ${{ if eq(parameters.cleanupDocker, 'true') }}:
   - template: init-docker-linux.yml
     parameters:
@@ -26,7 +33,7 @@ steps:
     --name $(testRunner.container)
     $(testrunner.image)
   displayName: Start Test Runner Container
-- ${{ if eq(variables['isPullRequestBuild'], 'false') }}:
+- ${{ if eq(parameters.isPullRequestBuild, 'false') }}:
   - script: >
       docker exec $(testRunner.container) pwsh
       -File ./scripts/Invoke-WithRetry.ps1
@@ -38,10 +45,9 @@ steps:
     -VersionFilter $(dotnetVersion)*
     -OSFilter $(osVariant)*
     -ArchitectureFilter $(architecture)
-    $(extraRunTestsParameters)
     $(optionalTestArgs)
   displayName: Test Images
-- ${{ if eq(variables['isPullRequestBuild'], 'false') }}:
+- ${{ if eq(parameters.isPullRequestBuild, 'false') }}:
   - script: docker exec $(testRunner.container) docker logout $(acr.server)
     displayName: Docker logout
     condition: always()

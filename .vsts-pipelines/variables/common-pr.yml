@@ -1,4 +1,2 @@
 variables:
 - template: docker-images.yml
-- name: isPullRequestBuild
-  value: true

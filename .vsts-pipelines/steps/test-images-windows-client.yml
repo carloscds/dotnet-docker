@@ -1,8 +1,10 @@
+parameters:
+  isPullRequestBuild: false
 variables:
   cleanupDocker: true
-  ${{ if eq(variables['isPullRequestBuild'], 'false') }}:
+  ${{ if eq(parameters.isPullRequestBuild, 'false') }}:
     extraRunTestsParameters: -Registry $(acr.server) -RepoPrefix $(stagingRepoPrefix)
-  ${{ if eq(variables['isPullRequestBuild'], 'true') }}:
+  ${{ if eq(parameters.isPullRequestBuild, 'true') }}:
     extraRunTestsParameters: -IsLocalRun
 steps:
 - ${{ if eq(parameters.cleanupDocker, 'true') }}:
